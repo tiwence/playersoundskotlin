@@ -44,10 +44,11 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
 
     @Inject
     lateinit var mRetrofit: Retrofit
-    lateinit var mItunesAPIService: RestAPIService
 
-    lateinit var searchDisposable: Disposable
-    lateinit var ticksDisposable: Disposable
+    private lateinit var mItunesAPIService: RestAPIService
+
+    private var searchDisposable: Disposable? = null
+    private lateinit var ticksDisposable: Disposable
 
     private val musicBind = MusicBinder()
 
@@ -64,13 +65,16 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
     override fun onUnbind(intent: Intent): Boolean {
         mMediaPlayer.stop()
         mMediaPlayer.release()
-        if (!searchDisposable.isDisposed)
-            searchDisposable.dispose()
-        if (!ticksDisposable.isDisposed)
-            ticksDisposable.dispose()
+
         onMusicChangeSubject.onComplete()
         onMusicPreparedSubject.onComplete()
         onMusicTicksSubject.onComplete()
+
+        if (searchDisposable != null && !searchDisposable!!.isDisposed)
+            searchDisposable!!.dispose()
+        if (!ticksDisposable.isDisposed)
+            ticksDisposable.dispose()
+
 
         return false
     }
@@ -86,7 +90,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
         mMediaPlayer = MediaPlayer()
 
         val ticksObservable = createMediaPlayerTicksObservable();
-        ticksObservable.subscribe { ticks ->
+        ticksDisposable = ticksObservable.subscribe { ticks ->
             onMusicTicksSubject.onNext(ticks)
         }
 
@@ -198,8 +202,9 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
             get() = this@MusicService
     }
 
-    fun createMediaPlayerTicksObservable(): Observable<Int> {
+    private fun createMediaPlayerTicksObservable(): Observable<Int> {
         return Observable.interval(16, TimeUnit.MILLISECONDS)
                 .map {  y -> mMediaPlayer.currentPosition }
+                .onErrorReturn { y -> 0 }
     }
 }

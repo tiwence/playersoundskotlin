@@ -5,14 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
 import android.support.v7.app.AppCompatActivity
 import com.jakewharton.rxbinding2.view.RxView
 import com.jakewharton.rxbinding2.widget.RxSeekBar
 import com.squareup.picasso.Picasso
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.media_player_layout.*
 import tiwence.fr.playersoundskotlin.model.Song
@@ -36,7 +34,7 @@ class MediaPlayerActivity : AppCompatActivity() {
 
     private val df = SimpleDateFormat("m:ss")
 
-    private lateinit var mSeekBarSubscription: Disposable
+    private lateinit var mSeekBarDisposable: Disposable
 
     /**
      * Connection use to bind the MusicService which will handle all MediaPlayer behaviours
@@ -53,18 +51,18 @@ class MediaPlayerActivity : AppCompatActivity() {
             mMusicService.setSongIndex(mPosition!!)
 
             //Observable used to bind all update song informations according to the current song played by the MediaPlayer
-            mMusicService.getMusicPositionObservable().subscribeOn(AndroidSchedulers.mainThread()).subscribe { position ->
+            mMusicService.getMusicPositionObservable().observeOn(AndroidSchedulers.mainThread()).subscribe { position ->
                 mPosition = position
                 displaySongInformations()
             }
 
             //Used to update enable function of the play button when the music stream is prepared properly
-            mMusicService.getMusicPreparedObservable().subscribeOn(AndroidSchedulers.mainThread()).subscribe { _ ->
+            mMusicService.getMusicPreparedObservable().observeOn(AndroidSchedulers.mainThread()).subscribe { _ ->
                 playPauseButton.isEnabled = true
             }
 
             //Used to update the media player progression according to user clicks on the seekbar
-            mSeekBarSubscription = RxSeekBar.userChanges(mediaPlayerSeekBar).subscribeOn(AndroidSchedulers.mainThread()).subscribe { progress ->
+            mSeekBarDisposable = RxSeekBar.userChanges(mediaPlayerSeekBar).observeOn(AndroidSchedulers.mainThread()).subscribe { progress ->
                 mMusicService.getmMediaPlayer().seekTo(progress)
             }
 
@@ -131,8 +129,8 @@ class MediaPlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if(!mSeekBarSubscription.isDisposed)
-            mSeekBarSubscription.dispose()
+        if(!mSeekBarDisposable.isDisposed)
+            mSeekBarDisposable.dispose()
         applicationContext.unbindService(musicConnection)
     }
 
