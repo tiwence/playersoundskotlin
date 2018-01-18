@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">PlayerSoundsKotlin</string>
+    <string name="placeholder_songname">Song name</string>
+    <string name="search_hint">Search by artist name...</string>
+    <string name="search_title">Search</string>
+    <string name="placeholder_artistname">Artist name</string>
+    <string name="placeholder_time">0:00</string>
+    <string name="placeholder_totaltime">0:30</string>
+    <string name="top">Top 100</string>
+    <string name="search_results">Results for : <b>%1$s</b></string>
+    <string name="error_msg">Problem occured during data fetching. Please check your internet connection and try again.</string>
+</resources>
